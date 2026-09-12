@@ -1,0 +1,30 @@
+/emails/
+
+# Python (mock-api)
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+
+# Node (frontend)
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
