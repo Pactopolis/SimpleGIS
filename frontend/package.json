@@ -1,0 +1,33 @@
+{
+  "name": "ridgeline-web",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run typecheck && vite build",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
+    "preview": "vite preview",
+    "test": "node --test",
+    "test:watch": "node --test --watch",
+    "start": "node server.js",
+    "serve": "npm run build && node server.js"
+  },
+  "engines": {
+    "node": "22.23.2",
+    "npm": "10.9.8"
+  },
+  "dependencies": {
+    "cesium": "^1.128.0",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "typescript": "~5.8.3",
+    "vite": "^6.0.5",
+    "vite-plugin-static-copy": "^2.3.0",
+    "vue-tsc": "^2.2.0"
+  }
+}

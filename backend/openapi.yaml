@@ -1,0 +1,858 @@
+openapi: 3.0.3
+
+info:
+  title: Ridgeline Operational Picture API
+  version: 0.9.4
+  description: WIP
+
+servers:
+  - url: https://api.ridgeline.trailblazers.com/v1
+    description: Production
+  - url: https://api.staging.ridgeline.trailblazers.com/v1
+    description: Staging
+
+tags:
+  - name: Points of Interest
+    description: Single-position features — landmarks, hazards, waypoints, facilities, observations.
+  - name: Areas of Interest
+    description: Closed polygonal features — restricted zones, search sectors, staging areas.
+  - name: Trail Routes
+    description: Open linear features — trails and routes between key points.
+
+paths:
+
+  # ---------------------------------------------------------------------------
+  # Points of Interest
+  # ---------------------------------------------------------------------------
+  /points-of-interest:
+    get:
+      tags: [Points of Interest]
+      operationId: listPointsOfInterest
+      summary: List points of interest
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/NameContains'
+        - $ref: '#/components/parameters/Bbox'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - name: poiCategory
+          in: query
+          required: false
+          description: Restrict results to a single category.
+          schema:
+            $ref: '#/components/schemas/PoiCategory'
+      responses:
+        '200':
+          description: A page of points of interest.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointOfInterestPage'
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+    post:
+      tags: [Points of Interest]
+      operationId: createPointOfInterest
+      summary: Create a point of interest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PointOfInterestWrite'
+      responses:
+        '201':
+          description: Created.
+          headers:
+            Location:
+              description: URI of the created resource.
+              schema: { type: string, format: uri }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointOfInterest'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/NameConflict' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+
+  /points-of-interest/{pointOfInterestId}:
+    parameters:
+      - $ref: '#/components/parameters/PointOfInterestId'
+    get:
+      tags: [Points of Interest]
+      operationId: getPointOfInterest
+      summary: Retrieve a point of interest
+      responses:
+        '200':
+          description: The point of interest.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointOfInterest'
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Points of Interest]
+      operationId: replacePointOfInterest
+      summary: Replace a point of interest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PointOfInterestReplace'
+      responses:
+        '200':
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointOfInterest'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/NameConflict' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+    delete:
+      tags: [Points of Interest]
+      operationId: deletePointOfInterest
+      summary: Delete a point of interest
+      responses:
+        '204':
+          description: Deleted.
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------------------
+  # Areas of Interest
+  # ---------------------------------------------------------------------------
+  /areas-of-interest:
+    get:
+      tags: [Areas of Interest]
+      operationId: listAreasOfInterest
+      summary: List areas of interest
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/NameContains'
+        - $ref: '#/components/parameters/Bbox'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - name: areaCategory
+          in: query
+          required: false
+          description: Restrict results to a single category.
+          schema:
+            $ref: '#/components/schemas/AreaCategory'
+      responses:
+        '200':
+          description: A page of areas of interest.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AreaOfInterestPage'
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+    post:
+      tags: [Areas of Interest]
+      operationId: createAreaOfInterest
+      summary: Create an area of interest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AreaOfInterestWrite'
+      responses:
+        '201':
+          description: Created.
+          headers:
+            Location:
+              description: URI of the created resource.
+              schema: { type: string, format: uri }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AreaOfInterest'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/NameConflict' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+
+  /areas-of-interest/{areaOfInterestId}:
+    parameters:
+      - $ref: '#/components/parameters/AreaOfInterestId'
+    get:
+      tags: [Areas of Interest]
+      operationId: getAreaOfInterest
+      summary: Retrieve an area of interest
+      responses:
+        '200':
+          description: The area of interest.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AreaOfInterest'
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Areas of Interest]
+      operationId: replaceAreaOfInterest
+      summary: Replace an area of interest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AreaOfInterestReplace'
+      responses:
+        '200':
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AreaOfInterest'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/NameConflict' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+    delete:
+      tags: [Areas of Interest]
+      operationId: deleteAreaOfInterest
+      summary: Delete an area of interest
+      responses:
+        '204':
+          description: Deleted.
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------------------
+  # Trail Routes
+  # ---------------------------------------------------------------------------
+  /trail-routes:
+    get:
+      tags: [Trail Routes]
+      operationId: listTrailRoutes
+      summary: List trail routes
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/NameContains'
+        - $ref: '#/components/parameters/Bbox'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - name: difficulty
+          in: query
+          required: false
+          description: Restrict results to a single difficulty rating.
+          schema:
+            $ref: '#/components/schemas/TrailDifficulty'
+      responses:
+        '200':
+          description: A page of trail routes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrailRoutePage'
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+    post:
+      tags: [Trail Routes]
+      operationId: createTrailRoute
+      summary: Create a trail route
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrailRouteWrite'
+      responses:
+        '201':
+          description: Created.
+          headers:
+            Location:
+              description: URI of the created resource.
+              schema: { type: string, format: uri }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrailRoute'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/NameConflict' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+
+  /trail-routes/{trailRouteId}:
+    parameters:
+      - $ref: '#/components/parameters/TrailRouteId'
+    get:
+      tags: [Trail Routes]
+      operationId: getTrailRoute
+      summary: Retrieve a trail route
+      responses:
+        '200':
+          description: The trail route.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrailRoute'
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Trail Routes]
+      operationId: replaceTrailRoute
+      summary: Replace a trail route
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrailRouteReplace'
+      responses:
+        '200':
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrailRoute'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/NameConflict' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+    delete:
+      tags: [Trail Routes]
+      operationId: deleteTrailRoute
+      summary: Delete a trail route
+      responses:
+        '204':
+          description: Deleted.
+        '404': { $ref: '#/components/responses/NotFound' }
+
+components:
+
+  parameters:
+    Page:
+      name: page
+      in: query
+      required: false
+      description: 1-based page number.
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      description: Items per page. Values above the maximum are rejected rather than clamped.
+      schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+    NameContains:
+      name: nameContains
+      in: query
+      required: false
+      description: Case-insensitive substring match on `name`.
+      schema: { type: string, minLength: 1, maxLength: 120 }
+    Bbox:
+      name: bbox
+      in: query
+      required: false
+      description: >-
+        Planar bounding-box filter as `minLon,minLat,maxLon,maxLat` in decimal
+        degrees. Elevation is not considered.
+      schema:
+        type: string
+        pattern: '^-?\d+(\.\d+)?(,-?\d+(\.\d+)?){3}$'
+      example: '-106.55,39.55,-106.35,39.75'
+    From:
+      name: from
+      in: query
+      required: false
+      description: >-
+        Inclusive start of a time-window filter, RFC 3339 with offset. Matches
+        features whose own window overlaps the supplied window. Features with
+        no window never match. Must be supplied together with `to`.
+      schema: { type: string, format: date-time }
+      example: '2026-03-14T00:00:00Z'
+    To:
+      name: to
+      in: query
+      required: false
+      description: >-
+        Inclusive end of a time-window filter, RFC 3339 with offset. Must be at
+        or after `from`.
+      schema: { type: string, format: date-time }
+      example: '2026-03-15T00:00:00Z'
+    PointOfInterestId:
+      name: pointOfInterestId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    AreaOfInterestId:
+      name: areaOfInterestId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    TrailRouteId:
+      name: trailRouteId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    BadRequest:
+      description: Malformed request — unparseable JSON, array body, unknown property, or bad query parameter.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: No such resource.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NameConflict:
+      description: >-
+        Another feature of the same type already uses the supplied `name`.
+        Names are unique per feature type.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    PayloadTooLarge:
+      description: Request body exceeded 1 MB.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+
+    # -- Enumerations ---------------------------------------------------------
+    FeatureType:
+      type: string
+      description: Discriminator for the three feature collections.
+      enum:
+        - PointOfInterest
+        - AreaOfInterest
+        - TrailRoute
+
+    PoiCategory:
+      type: string
+      description: Required classification for a point of interest. There is no unspecified or other member.
+      enum:
+        - Landmark
+        - Hazard
+        - Waypoint
+        - Facility
+        - Observation
+
+    AreaCategory:
+      type: string
+      description: Required classification for an area of interest. There is no unspecified or other member.
+      enum:
+        - Restricted
+        - Search
+        - Staging
+        - Hazard
+        - Coverage
+
+    TrailDifficulty:
+      type: string
+      description: Required difficulty rating for a trail route. There is no unspecified or other member.
+      enum:
+        - Easy
+        - Moderate
+        - Difficult
+        - Expert
+
+    # -- Geometry -------------------------------------------------------------
+    Position:
+      type: array
+      description: A single GeoJSON position.
+      minItems: 3
+      maxItems: 3
+      items:
+        type: number
+        format: double
+      example: [-106.4453, 39.6403, 3421.5]
+
+    PointGeometry:
+      type: object
+      description: GeoJSON `Point`.
+      required: [type, coordinates]
+      additionalProperties: false
+      properties:
+        type:
+          type: string
+          enum: [Point]
+        coordinates:
+          $ref: '#/components/schemas/Position'
+
+    LineStringGeometry:
+      type: object
+      description: GeoJSON `LineString`.
+      required: [type, coordinates]
+      additionalProperties: false
+      properties:
+        type:
+          type: string
+          enum: [LineString]
+        coordinates:
+          type: array
+          minItems: 2
+          maxItems: 10000
+          items:
+            $ref: '#/components/schemas/Position'
+
+    PolygonGeometry:
+      type: object
+      description: GeoJSON `Polygon`. The first ring is the exterior ring; any subsequent rings are interior rings.
+      required: [type, coordinates]
+      additionalProperties: false
+      properties:
+        type:
+          type: string
+          enum: [Polygon]
+        coordinates:
+          type: array
+          minItems: 1
+          items:
+            type: array
+            minItems: 4
+            items:
+              $ref: '#/components/schemas/Position'
+
+    # -- Shared feature metadata ---------------------------------------------
+    FeatureName:
+      type: string
+      description: >-
+        Human-readable label. Required on every feature, non-blank after
+        trimming, and unique among features of the same type. There is no
+        server-side fallback or auto-generated name.
+      minLength: 1
+      maxLength: 120
+      example: 'Saddle Creek Overlook'
+
+    FeatureDescription:
+      type: string
+      description: >-
+        Optional free-text note. Plain text only — markup is rejected rather than escaped or stripped. Line breaks are permitted.
+      maxLength: 512
+      nullable: true
+      example: 'Line of sight to the north basin. Snow-covered above 3200 m.'
+
+    FeatureMetadataRead:
+      type: object
+      description: Server-assigned metadata common to all three feature types.
+      required: [id, featureType, name, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        featureType:
+          allOf:
+            - $ref: '#/components/schemas/FeatureType'
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 512
+          nullable: true
+        startTime:
+          $ref: '#/components/schemas/FeatureStartTime'
+        endTime:
+          $ref: '#/components/schemas/FeatureEndTime'
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
+
+    # -- Feature time bounds --------------------------------------------------
+    FeatureStartTime:
+      type: string
+      format: date-time
+      nullable: true
+      description: >-
+        Inclusive start of the period the feature is active. RFC 3339 timestamp
+        with offset — a bare local date-time is rejected. Must be supplied
+        together with `endTime`: a feature carries both bounds or neither, and
+        supplying only one is rejected. A feature carrying both bounds is a
+        timed feature and is what the time-window filter matches on.
+      example: '2026-03-14T13:05:00Z'
+
+    FeatureEndTime:
+      type: string
+      format: date-time
+      nullable: true
+      description: >-
+        Inclusive end of the period the feature is active. RFC 3339 timestamp
+        with offset. Must be at or after `startTime`. An instantaneous feature
+        is expressed by setting `endTime` equal to `startTime`.
+      example: '2026-03-14T17:40:00Z'
+
+    # -- Point of Interest ----------------------------------------------------
+    PointOfInterestWrite:
+      type: object
+      description: Creation body for a point of interest.
+      required: [name, poiCategory, geometry]
+      additionalProperties: false
+      properties:
+        name:
+          $ref: '#/components/schemas/FeatureName'
+        description:
+          $ref: '#/components/schemas/FeatureDescription'
+        poiCategory:
+          $ref: '#/components/schemas/PoiCategory'
+        geometry:
+          $ref: '#/components/schemas/PointGeometry'
+        startTime:
+          $ref: '#/components/schemas/FeatureStartTime'
+        endTime:
+          $ref: '#/components/schemas/FeatureEndTime'
+      example:
+        name: 'Saddle Creek Overlook'
+        description: 'Line of sight to the north basin.'
+        poiCategory: Observation
+        geometry:
+          type: Point
+          coordinates: [-106.4453, 39.6403, 3421.5]
+
+    PointOfInterestReplace:
+      type: object
+      description: >-
+        Replacement body for a point of interest. Replacement is total: omitting
+        `startTime` and `endTime` clears the feature's window.
+      required: [name, poiCategory, geometry]
+      additionalProperties: false
+      properties:
+        name:
+          $ref: '#/components/schemas/FeatureName'
+        description:
+          $ref: '#/components/schemas/FeatureDescription'
+        poiCategory:
+          $ref: '#/components/schemas/PoiCategory'
+        geometry:
+          $ref: '#/components/schemas/PointGeometry'
+        startTime:
+          $ref: '#/components/schemas/FeatureStartTime'
+        endTime:
+          $ref: '#/components/schemas/FeatureEndTime'
+
+    PointOfInterest:
+      allOf:
+        - $ref: '#/components/schemas/FeatureMetadataRead'
+        - type: object
+          required: [poiCategory, geometry]
+          properties:
+            poiCategory:
+              $ref: '#/components/schemas/PoiCategory'
+            geometry:
+              $ref: '#/components/schemas/PointGeometry'
+
+    PointOfInterestPage:
+      allOf:
+        - $ref: '#/components/schemas/PageEnvelope'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/PointOfInterest'
+
+    # -- Area of Interest -----------------------------------------------------
+    AreaOfInterestWrite:
+      type: object
+      description: Creation body for an area of interest.
+      required: [name, areaCategory, geometry]
+      additionalProperties: false
+      properties:
+        name:
+          $ref: '#/components/schemas/FeatureName'
+        description:
+          $ref: '#/components/schemas/FeatureDescription'
+        areaCategory:
+          $ref: '#/components/schemas/AreaCategory'
+        geometry:
+          $ref: '#/components/schemas/PolygonGeometry'
+        startTime:
+          $ref: '#/components/schemas/FeatureStartTime'
+        endTime:
+          $ref: '#/components/schemas/FeatureEndTime'
+      example:
+        name: 'North Basin Search Sector'
+        areaCategory: Search
+        geometry:
+          type: Polygon
+          coordinates:
+            - [[-106.46, 39.64, 3200.0], [-106.44, 39.64, 3210.0], [-106.44, 39.66, 3260.0], [-106.46, 39.66, 3240.0], [-106.46, 39.64, 3200.0]]
+        startTime: '2026-03-14T13:05:00Z'
+        endTime: '2026-03-14T17:40:00Z'
+
+    AreaOfInterestReplace:
+      type: object
+      description: >-
+        Replacement body for an area of interest. Replacement is total: omitting
+        `startTime` and `endTime` clears the feature's window.
+      required: [name, areaCategory, geometry]
+      additionalProperties: false
+      properties:
+        name:
+          $ref: '#/components/schemas/FeatureName'
+        description:
+          $ref: '#/components/schemas/FeatureDescription'
+        areaCategory:
+          $ref: '#/components/schemas/AreaCategory'
+        geometry:
+          $ref: '#/components/schemas/PolygonGeometry'
+        startTime:
+          $ref: '#/components/schemas/FeatureStartTime'
+        endTime:
+          $ref: '#/components/schemas/FeatureEndTime'
+
+    AreaOfInterest:
+      allOf:
+        - $ref: '#/components/schemas/FeatureMetadataRead'
+        - type: object
+          required: [areaCategory, geometry]
+          properties:
+            areaCategory:
+              $ref: '#/components/schemas/AreaCategory'
+            geometry:
+              $ref: '#/components/schemas/PolygonGeometry'
+            areaSquareMetres:
+              type: number
+              format: double
+              description: Planar area computed server-side on write.
+              readOnly: true
+
+    AreaOfInterestPage:
+      allOf:
+        - $ref: '#/components/schemas/PageEnvelope'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/AreaOfInterest'
+
+    # -- Trail Route ----------------------------------------------------------
+    TrailRouteWrite:
+      type: object
+      description: Creation body for a trail route.
+      required: [name, difficulty, geometry]
+      additionalProperties: false
+      properties:
+        name:
+          $ref: '#/components/schemas/FeatureName'
+        description:
+          $ref: '#/components/schemas/FeatureDescription'
+        difficulty:
+          $ref: '#/components/schemas/TrailDifficulty'
+        geometry:
+          $ref: '#/components/schemas/LineStringGeometry'
+        startTime:
+          $ref: '#/components/schemas/FeatureStartTime'
+        endTime:
+          $ref: '#/components/schemas/FeatureEndTime'
+      example:
+        name: 'Saddle Creek Approach'
+        difficulty: Moderate
+        geometry:
+          type: LineString
+          coordinates:
+            - [-106.4501, 39.6350, 3105.0]
+            - [-106.4478, 39.6371, 3188.0]
+            - [-106.4453, 39.6403, 3421.5]
+
+    TrailRouteReplace:
+      type: object
+      description: >-
+        Replacement body for a trail route. Replacement is total: omitting
+        `startTime` and `endTime` clears the feature's window.
+      required: [name, difficulty, geometry]
+      additionalProperties: false
+      properties:
+        name:
+          $ref: '#/components/schemas/FeatureName'
+        description:
+          $ref: '#/components/schemas/FeatureDescription'
+        difficulty:
+          $ref: '#/components/schemas/TrailDifficulty'
+        geometry:
+          $ref: '#/components/schemas/LineStringGeometry'
+        startTime:
+          $ref: '#/components/schemas/FeatureStartTime'
+        endTime:
+          $ref: '#/components/schemas/FeatureEndTime'
+
+    TrailRoute:
+      allOf:
+        - $ref: '#/components/schemas/FeatureMetadataRead'
+        - type: object
+          required: [difficulty, geometry]
+          properties:
+            difficulty:
+              $ref: '#/components/schemas/TrailDifficulty'
+            geometry:
+              $ref: '#/components/schemas/LineStringGeometry'
+            lengthMetres:
+              type: number
+              format: double
+              description: Planar length computed server-side on write.
+              readOnly: true
+
+    TrailRoutePage:
+      allOf:
+        - $ref: '#/components/schemas/PageEnvelope'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/TrailRoute'
+
+    # -- Envelopes ------------------------------------------------------------
+    PageEnvelope:
+      type: object
+      required: [page, pageSize, totalItems, totalPages]
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 200
+        totalItems:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+
+    Error:
+      type: object
+      description: >-
+        Uniform error envelope. Every failed request returns this shape.
+        Requests fail as a unit — there is no partial-success response and no
+        per-item outcome reporting.
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          enum:
+            - malformed_body
+            - array_body_not_supported
+            - unknown_property
+            - invalid_query_parameter
+            - not_found
+            - name_conflict
+            - payload_too_large
+          example: invalid_query_parameter
+        message:
+          type: string
+          description: Human-readable summary. Not intended for display to end users.
+          example: 'The request failed validation.'
+        traceId:
+          type: string
+          description: Correlation identifier for support requests.
+          nullable: true
