@@ -1,7 +1,7 @@
 name: ridgeline-dev
 
 # Full-stack dev environment: database, backend, and frontend, each with
-# source bind-mounted and hot reloading. Separate from the root Dockerfile
+# source bind-mounted and hot reloading. Separate from test/Dockerfile
 # (which runs the automated test suites once and exits) and from
 # database/docker-compose.yml (a standalone db-only stack) — don't run
 # either of those alongside this one, since the db service here binds the

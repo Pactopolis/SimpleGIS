@@ -1,7 +1,13 @@
 # Tests backend/, database/, and frontend/ together in one container.
 #
-#   docker build -t ridgeline-test .
-#   docker run --rm ridgeline-test
+#   ./test/run.sh
+#
+# ...or the two docker commands that script wraps, run from the repo root
+# (the build context, since COPY below reaches into frontend/, backend/,
+# etc. — the context is not this directory):
+#
+#   docker build -f test/Dockerfile -t ridgeline-test .
+#   docker run --rm -t ridgeline-test
 #
 # `docker run` is the actual test run (see test-all.sh) — the build just
 # assembles the environment, so re-running the tests after an edit doesn't
@@ -47,6 +53,6 @@ RUN npm --prefix frontend ci
 COPY . .
 # The postgres server runs as the non-root `postgres` user; make sure it can
 # read the repo regardless of what permissions the build context had.
-RUN chmod -R a+rX /workspace && chmod +x test-all.sh
+RUN chmod -R a+rX /workspace && chmod +x test/test-all.sh
 
-CMD ["./test-all.sh"]
+CMD ["test/test-all.sh"]

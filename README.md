@@ -23,7 +23,7 @@ running). Either `mock-api/` or `backend/` will do — they implement the same
 contract.
 
 The devcontainer also gets Docker itself via the `docker-outside-of-docker`
-feature, so `database/` (see below) and the root `Dockerfile` both work from
+feature, so `database/` (see below) and `test/` (see below) both work from
 inside it — commands run against your host's (or Docker Desktop's) Docker
 daemon, same as running them outside the container.
 
@@ -40,9 +40,8 @@ daemon, same as running them outside the container.
 - **[database/](database/)** — a disposable dockerized PostgreSQL/PostGIS
   instance matching the data model, for whoever wires up real persistence.
   Runnable; see [database/README.md](database/README.md).
-- **[Dockerfile](Dockerfile)** — builds and runs the backend, database, and
-  frontend test suites together in one container: `docker build -t
-  ridgeline-test . && docker run --rm ridgeline-test`.
+- **[test/](test/)** — builds and runs the backend, database, and frontend
+  test suites together in one container: `./test/run.sh`.
 - **[emails/](emails/)** — correspondence with reference to requirements and
   design decisions (KML support, geometry handling, overlays, etc.).
 
