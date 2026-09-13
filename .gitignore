@@ -1,4 +1,5 @@
 /emails/
+/samples/
 
 # Python (mock-api)
 __pycache__/
