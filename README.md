@@ -9,11 +9,11 @@ Open the repository root in VS Code and reopen it in the devcontainer
 (`.devcontainer/`). It provisions Node 22.23.2 and Python 3.12.7, installs the
 frontend's npm dependencies, and forwards the ports both projects use:
 
-| Port | Service |
-| ---- | ------- |
-| 5173 | Vite dev server (frontend) |
+| Port | Service                        |
+| ---- | ------------------------------ |
+| 5173 | Vite dev server (frontend)     |
 | 4173 | Frontend static preview server |
-| 8080 | Mock API / backend |
+| 8080 | Mock API / backend             |
 
 Once the container is up, run the frontend and an API server in separate
 terminals — see their own READMEs linked below for exact commands. The
@@ -31,9 +31,6 @@ daemon, same as running them outside the container.
 
 - **[frontend/](frontend/)** — the Vue 3 + Cesium map viewer. Runnable; see
   [frontend/README.md](frontend/README.md).
-- **[mock-api/](mock-api/)** — a standard-library-only Python implementation
-  of the API contract, for local development without a real backend.
-  Runnable; see [mock-api/README.md](mock-api/README.md).
 - **[backend/](backend/)** — `openapi.yaml`, the API contract, plus a Node
   implementation of it with an in-memory store. Runnable; see
   [backend/package.json](backend/package.json) (`npm start`, `npm test`).
@@ -42,8 +39,6 @@ daemon, same as running them outside the container.
   Runnable; see [database/README.md](database/README.md).
 - **[test/](test/)** — builds and runs the backend, database, and frontend
   test suites together in one container: `./test/run.sh`.
-- **[emails/](emails/)** — correspondence with reference to requirements and
-  design decisions (KML support, geometry handling, overlays, etc.).
 
 ## License
 
