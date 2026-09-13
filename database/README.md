@@ -19,11 +19,11 @@ for whoever wires up a real persistence layer next.
 ## Requirements
 
 Docker Engine with the Compose plugin (`docker compose`, not the old
-standalone `docker-compose`). The devcontainer does not install Docker, so
-run this from your host machine, or add a
-[docker-outside-of-docker](https://github.com/devcontainers/features/tree/main/src/docker-outside-of-docker)
-feature to `.devcontainer/devcontainer.json` if you want `docker compose` to
-work inside the container too.
+standalone `docker-compose`). The devcontainer gets this via the
+`docker-outside-of-docker` feature in `.devcontainer/devcontainer.json` —
+it mounts your host's (or Docker Desktop's) Docker socket into the
+container, so `docker compose` here talks to the same daemon your host
+would. Rebuild the devcontainer after pulling a change to that file.
 
 ## Running
 

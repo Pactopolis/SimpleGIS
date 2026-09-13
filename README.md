@@ -22,9 +22,10 @@ start the API server first (or in any order, just make sure both end up
 running). Either `mock-api/` or `backend/` will do — they implement the same
 contract.
 
-Docker isn't installed in the devcontainer, so `database/` (see below) has
-to be run from your host machine, or you'll need to add a Docker feature to
-`.devcontainer/devcontainer.json` yourself.
+The devcontainer also gets Docker itself via the `docker-outside-of-docker`
+feature, so `database/` (see below) and the root `Dockerfile` both work from
+inside it — commands run against your host's (or Docker Desktop's) Docker
+daemon, same as running them outside the container.
 
 ## Layout
 
@@ -39,6 +40,9 @@ to be run from your host machine, or you'll need to add a Docker feature to
 - **[database/](database/)** — a disposable dockerized PostgreSQL/PostGIS
   instance matching the data model, for whoever wires up real persistence.
   Runnable; see [database/README.md](database/README.md).
+- **[Dockerfile](Dockerfile)** — builds and runs the backend, database, and
+  frontend test suites together in one container: `docker build -t
+  ridgeline-test . && docker run --rm ridgeline-test`.
 - **[emails/](emails/)** — correspondence with reference to requirements and
   design decisions (KML support, geometry handling, overlays, etc.).
 
