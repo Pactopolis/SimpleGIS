@@ -1,0 +1,26 @@
+name: ridgeline-db
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: ridgeline-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ridgeline}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ridgeline}
+      POSTGRES_DB: ${POSTGRES_DB:-ridgeline}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    # Nothing persists past the container's life — PGDATA lives on tmpfs, so
+    # every start runs ./init from scratch against a clean database. This
+    # matches the rest of the project: mock-api and backend/ both keep
+    # everything in memory too, and are gone on restart.
+    tmpfs:
+      - /var/lib/postgresql/data
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

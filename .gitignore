@@ -1,4 +1,9 @@
+# ignore files and directories that are not needed in the repository for development
 /emails/
+/samples/
+
+# make sure to ignore the claude directory, which is used for local development and testing
+/.claude/
 
 # Python (mock-api)
 __pycache__/

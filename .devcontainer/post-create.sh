@@ -70,4 +70,24 @@ git config --global init.defaultBranch main
   python -B -c "import server"
 )
 
+
+# docker-compose.yml (full-stack dev stack: db + backend + frontend, hot
+# reloading) bind-mounts source directories. This devcontainer's Docker
+# daemon runs outside the container (docker-outside-of-docker), so a
+# relative bind-mount path resolves against the daemon's filesystem, not
+# this container's, and silently mounts an empty directory. Detect the real
+# host path this workspace is bind-mounted from and record it in .env so
+# `docker compose up` uses it instead of the (wrong) relative default.
+if [ -f /.dockerenv ] && command -v docker >/dev/null 2>&1; then
+  host_repo_root="$(docker inspect "$(hostname)" \
+    --format "{{ range .Mounts }}{{ if eq .Destination \"$PWD\" }}{{ .Source }}{{ end }}{{ end }}" \
+    2>/dev/null || true)"
+
+  if [ -n "$host_repo_root" ]; then
+    [ -f .env ] && grep -v '^HOST_REPO_ROOT=' .env > .env.tmp && mv .env.tmp .env
+    echo "HOST_REPO_ROOT=${host_repo_root}" >> .env
+    echo "Detected host path for docker-compose.yml bind mounts: ${host_repo_root} (written to .env)"
+  fi
+fi
+
 echo "Ready. Run: npm --prefix frontend run dev   (and, separately) python mock-api/server.py"

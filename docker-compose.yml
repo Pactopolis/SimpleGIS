@@ -1,0 +1,92 @@
+name: ridgeline-dev
+
+# Full-stack dev environment: database, backend, and frontend, each with
+# source bind-mounted and hot reloading. Separate from test/Dockerfile
+# (which runs the automated test suites once and exits) and from
+# database/docker-compose.yml (a standalone db-only stack) — don't run
+# either of those alongside this one, since the db service here binds the
+# same host port.
+#
+#   docker compose up
+#
+# Frontend: http://localhost:5173
+# Backend:  http://localhost:8080
+# Postgres: postgres://ridgeline:ridgeline@127.0.0.1:5432/ridgeline
+#
+# Bind-mount paths use HOST_REPO_ROOT (default: this directory), which
+# matters when the Docker daemon runs outside this checkout — e.g. this
+# devcontainer's docker-outside-of-docker setup, where a relative path
+# resolves against the daemon's filesystem, not this container's. In that
+# case, .devcontainer/post-create.sh writes HOST_REPO_ROOT into .env
+# automatically. Running compose directly against a local daemon (the
+# common case) needs no override.
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: ridgeline-dev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ridgeline}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ridgeline}
+      POSTGRES_DB: ${POSTGRES_DB:-ridgeline}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    # Ephemeral, same as database/docker-compose.yml: nothing persists past
+    # the container's life, so every start applies the schema fresh.
+    tmpfs:
+      - /var/lib/postgresql/data
+    volumes:
+      - ${HOST_REPO_ROOT:-.}/database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Note: backend/ is still an in-memory store — it doesn't talk to `db` yet.
+  # It's brought up here so the full stack is one `docker compose up` for
+  # whoever wires up persistence next.
+  backend:
+    image: node:22.23.2-bookworm
+    container_name: ridgeline-dev-backend
+    working_dir: /app
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8080"
+    # `npm run dev` (node --watch) relies on native filesystem change events,
+    # which bind mounts don't reliably deliver into a container (notably
+    # from a Windows host, as in this project's devcontainer). nodemon
+    # --legacy-watch polls instead, so it works everywhere; pulled via npx
+    # rather than added to backend/package.json, which is dependency-free
+    # by design outside of this container-only dev convenience.
+    command: sh -c "npm install && npx --yes nodemon@3 --legacy-watch --ext ts --watch src --exec 'node src/server.ts'"
+    volumes:
+      - ${HOST_REPO_ROOT:-.}/backend:/app
+      - backend_node_modules:/app/node_modules
+    ports:
+      - "8080:8080"
+
+  frontend:
+    image: node:22.23.2-bookworm
+    container_name: ridgeline-dev-frontend
+    working_dir: /app
+    environment:
+      # vite.config.ts proxies /v1 here instead of 127.0.0.1, since that
+      # wouldn't reach the backend container from inside this one.
+      API_PROXY_TARGET: http://backend:8080
+      # Same bind-mount filesystem-events caveat as backend/ above — vite.config.ts
+      # switches chokidar to polling when this is set.
+      VITE_USE_POLLING: "true"
+    command: sh -c "npm install && npm run dev"
+    volumes:
+      - ${HOST_REPO_ROOT:-.}/frontend:/app
+      - frontend_node_modules:/app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  backend_node_modules:
+  frontend_node_modules:
