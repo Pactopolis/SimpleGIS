@@ -1,0 +1,17 @@
+{
+  "name": "ridgeline-api",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Node implementation of the Ridgeline Operational Picture API (openapi.yaml).",
+  "scripts": {
+    "start": "node src/server.ts",
+    "dev": "node --watch src/server.ts",
+    "test": "node --test",
+    "test:watch": "node --test --watch"
+  },
+  "engines": {
+    "node": "22.23.2"
+  }
+}
