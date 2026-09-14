@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { AREAS_OF_INTEREST, POINTS_OF_INTEREST, TRAIL_ROUTES } from "./catalog.ts";
+import {
+  AREAS_OF_INTEREST,
+  CAMERA_CONES,
+  POINTS_OF_INTEREST,
+  TRAIL_ROUTES,
+} from "./catalog.ts";
 import { ApiError } from "./errors.ts";
 import {
   MAX_DESCRIPTION_LENGTH,
@@ -58,11 +63,59 @@ const validTrail = {
   },
 };
 
+const validCamera = {
+  name: "North Ridge Camera",
+  cameraTier: "Mid",
+  geometry: { type: "Point", coordinates: [-106.447, 39.641, 3410] },
+};
+
 describe("readFeatureBody: shared body rules", () => {
   it("accepts a well-formed body for each collection", () => {
     assert.equal(readFeatureBody(POINTS_OF_INTEREST, validPoi).name, "Saddle Creek Overlook");
     assert.equal(readFeatureBody(AREAS_OF_INTEREST, validAoi).category, "Search");
     assert.equal(readFeatureBody(TRAIL_ROUTES, validTrail).category, "Moderate");
+    assert.equal(readFeatureBody(CAMERA_CONES, validCamera).category, "Mid");
+  });
+
+  it("defaults a camera cone to a north-facing horizontal orientation", () => {
+    const body = readFeatureBody(CAMERA_CONES, validCamera);
+    assert.equal(body.headingDegrees, 0);
+    assert.equal(body.pitchDegrees, 0);
+  });
+
+  it("accepts valid camera orientation angles", () => {
+    const body = readFeatureBody(CAMERA_CONES, {
+      ...validCamera,
+      headingDegrees: 359.9,
+      pitchDegrees: -12.5,
+    });
+    assert.equal(body.headingDegrees, 359.9);
+    assert.equal(body.pitchDegrees, -12.5);
+  });
+
+  it("rejects invalid camera orientation angles", () => {
+    for (const values of [
+      { headingDegrees: -1 },
+      { headingDegrees: 360 },
+      { pitchDegrees: -91 },
+      { pitchDegrees: 91 },
+      { headingDegrees: "north" },
+      { headingDegrees: null },
+    ]) {
+      assertApiError(
+        () => readFeatureBody(CAMERA_CONES, { ...validCamera, ...values }),
+        400,
+        "malformed_body",
+      );
+    }
+  });
+
+  it("does not allow camera orientation fields on another feature type", () => {
+    assertApiError(
+      () => readFeatureBody(POINTS_OF_INTEREST, { ...validPoi, headingDegrees: 0 }),
+      400,
+      "unknown_property",
+    );
   });
 
   it("rejects an array body as array_body_not_supported", () => {

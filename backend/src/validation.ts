@@ -27,6 +27,7 @@ const RFC3339 =
   /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?(Z|[+-]\d{2}:\d{2})$/i;
 
 const BODY_FIELDS = ["name", "description", "geometry", "startTime", "endTime"];
+const CAMERA_BODY_FIELDS = ["headingDegrees", "pitchDegrees"];
 const QUERY_FIELDS = ["page", "pageSize", "nameContains", "bbox", "from", "to"];
 
 export type { Geometry, FeatureBody, ListQuery };
@@ -45,7 +46,11 @@ export function readFeatureBody(collection: Collection, payload: unknown): Featu
   }
 
   const body = payload as Record<string, unknown>;
-  const allowed = new Set([...BODY_FIELDS, collection.categoryField]);
+  const allowed = new Set([
+    ...BODY_FIELDS,
+    ...cameraBodyFields(collection),
+    collection.categoryField,
+  ]);
   const unknown = Object.keys(body)
     .filter((key) => !allowed.has(key))
     .sort();
@@ -56,7 +61,7 @@ export function readFeatureBody(collection: Collection, payload: unknown): Featu
 
   const [startTime, endTime] = readWindow(body);
 
-  return {
+  const bodyFields: FeatureBody = {
     name: readName(body),
     description: readDescription(body),
     category: readCategory(collection, body),
@@ -64,6 +69,44 @@ export function readFeatureBody(collection: Collection, payload: unknown): Featu
     startTime,
     endTime,
   };
+
+  if (collection.featureType === "CameraCone") {
+    bodyFields.headingDegrees = readAngle(body, "headingDegrees", 0, 0, 360, false);
+    bodyFields.pitchDegrees = readAngle(body, "pitchDegrees", 0, -90, 90, true);
+  }
+
+  return bodyFields;
+}
+
+function cameraBodyFields(collection: Collection): string[] {
+  return collection.featureType === "CameraCone" ? CAMERA_BODY_FIELDS : [];
+}
+
+function readAngle(
+  body: Record<string, unknown>,
+  field: string,
+  fallback: number,
+  minimum: number,
+  maximum: number,
+  inclusiveMaximum: boolean,
+): number {
+  const value = field in body ? body[field] : fallback;
+
+  if (
+    typeof value !== "number" ||
+    !Number.isFinite(value) ||
+    value < minimum ||
+    (inclusiveMaximum ? value > maximum : value >= maximum)
+  ) {
+    const upper = inclusiveMaximum ? `${maximum}` : `less than ${maximum}`;
+    throw new ApiError(
+      400,
+      "malformed_body",
+      `'${field}' must be a finite number from ${minimum} to ${upper}.`,
+    );
+  }
+
+  return value;
 }
 
 export function readListQuery(

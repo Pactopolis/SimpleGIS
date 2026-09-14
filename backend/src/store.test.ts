@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { AREAS_OF_INTEREST, POINTS_OF_INTEREST, TRAIL_ROUTES } from "./catalog.ts";
+import {
+  AREAS_OF_INTEREST,
+  CAMERA_CONES,
+  POINTS_OF_INTEREST,
+  TRAIL_ROUTES,
+} from "./catalog.ts";
 import { ApiError } from "./errors.ts";
 import { FeatureStore } from "./store.ts";
 import type { FeatureBody, ListQuery } from "./types.ts";
@@ -45,6 +50,20 @@ function noFilters(): ListQuery {
   return { page: 1, pageSize: 50, nameContains: null, bbox: null, window: null, category: null };
 }
 
+function cameraBody(overrides: Partial<FeatureBody> = {}): FeatureBody {
+  return {
+    name: "North Ridge Camera",
+    description: null,
+    category: "Mid",
+    geometry: { type: "Point", coordinates: [-106.447, 39.641, 3410] },
+    startTime: null,
+    endTime: null,
+    headingDegrees: 12,
+    pitchDegrees: -8,
+    ...overrides,
+  };
+}
+
 describe("FeatureStore.create", () => {
   it("assigns an id and createdAt, and leaves updatedAt null", () => {
     const store = new FeatureStore();
@@ -63,6 +82,21 @@ describe("FeatureStore.create", () => {
     assert.equal("areaSquareMetres" in poi, false);
     assert.equal(typeof aoi.areaSquareMetres, "number");
     assert.ok((aoi.areaSquareMetres as number) > 0);
+  });
+
+  it("assigns the canonical cone dimensions for a camera tier", () => {
+    const store = new FeatureStore();
+    const camera = store.create(CAMERA_CONES, cameraBody());
+
+    assert.equal(camera.featureType, "CameraCone");
+    assert.equal(camera.cameraTier, "Mid");
+    assert.equal(camera.typicalSpec, "4MP varifocal");
+    assert.equal(camera.hfovDegrees, 60);
+    assert.equal(camera.halfAngleDegrees, 30);
+    assert.equal(camera.distanceFromVertexMetres, 200);
+    assert.equal(camera.baseRadiusMetres, 115.5);
+    assert.equal(camera.headingDegrees, 12);
+    assert.equal(camera.pitchDegrees, -8);
   });
 
   it("rejects a duplicate name within the same collection", () => {

@@ -6,11 +6,15 @@ import {
   Color,
   ConstantPositionProperty,
   ImageryLayer,
+  Matrix3,
+  Matrix4,
   Math as CesiumMath,
   OpenStreetMapImageryProvider,
   PolygonHierarchy,
+  Quaternion,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
+  Transforms,
   Viewer,
 } from "cesium";
 import {
@@ -25,6 +29,8 @@ import {
 import AreaOfInterestDetails from "./AreaOfInterestDetails.vue";
 import AreaOfInterestForm from "./AreaOfInterestForm.vue";
 import AssetTable from "./AssetTable.vue";
+import CameraConeDetails from "./CameraConeDetails.vue";
+import CameraConeForm from "./CameraConeForm.vue";
 import EventRangeFields from "./EventRangeFields.vue";
 import EventTable from "./EventTable.vue";
 import FeatureDrawer from "./FeatureDrawer.vue";
@@ -38,6 +44,7 @@ import {
   API_BASE_URL,
   aborted,
   eachPage,
+  listCameraCones,
   listAreasOfInterest,
   listPointsOfInterest,
   listTrailRoutes,
@@ -50,6 +57,7 @@ import type { DrawerView } from "../types/display.ts";
 import type { FeatureType } from "../types/enums.ts";
 import type {
   AreaOfInterest,
+  CameraCone,
   Feature,
   PointOfInterest,
   TimeWindow,
@@ -74,6 +82,8 @@ const GORE_RANGE_APPROACH = {
 const MARKER_COLOR = Color.fromCssColorString("#e8532b");
 const TRAIL_COLOR = Color.ROYALBLUE;
 const AREA_COLOR = Color.DARKGREEN;
+const CAMERA_COLOR = Color.DARKORANGE;
+const CAMERA_CONE_ID_PREFIX = "camera-cone:";
 
 const MARKER = {
   pixelSize: 14,
@@ -96,6 +106,8 @@ const TRAIL_VERTEX = {
 const AREA_VERTEX = { ...TRAIL_VERTEX, color: AREA_COLOR };
 const AREA_OUTLINE_WIDTH = 2;
 const AREA_FILL = AREA_COLOR.withAlpha(0.3);
+const CAMERA_FILL = CAMERA_COLOR.withAlpha(0.28);
+const CAMERA_MARKER = { ...MARKER, color: CAMERA_COLOR };
 
 const emit = defineEmits<{ create: [feature: Feature] }>();
 
@@ -109,6 +121,7 @@ const areaClosed = ref(false);
 const mappedPoints = ref<PointOfInterest[]>([]);
 const mappedTrails = ref<TrailRoute[]>([]);
 const mappedAreas = ref<AreaOfInterest[]>([]);
+const mappedCameras = ref<CameraCone[]>([]);
 const selected = ref<Feature | null>(null);
 const drawerOpen = ref(false);
 const drawerView = ref<DrawerView>("assets");
@@ -119,6 +132,7 @@ const assets = computed<Feature[]>(() => [
   ...mappedPoints.value,
   ...mappedTrails.value,
   ...mappedAreas.value,
+  ...mappedCameras.value,
 ]);
 
 const trailPath = computed<Path>(() => toPath(trailPositions.value));
@@ -175,6 +189,7 @@ onBeforeUnmount(() => {
   mappedPoints.value = [];
   mappedTrails.value = [];
   mappedAreas.value = [];
+  mappedCameras.value = [];
   mappedEntities = new Map();
   trailPositions.value = [];
   trailComplete.value = false;
@@ -204,6 +219,10 @@ async function loadFeatures(): Promise<void> {
         (page) => listAreasOfInterest({ page, pageSize: MAX_PAGE_SIZE }, options),
         mapArea,
       ),
+      eachPage(
+        (page) => listCameraCones({ page, pageSize: MAX_PAGE_SIZE }, options),
+        mapCamera,
+      ),
     ]);
   } catch (cause) {
     if (!aborted(cause)) {
@@ -218,7 +237,10 @@ function toggleTool(featureType: FeatureType): void {
   armedTool.value = armedTool.value === featureType ? null : featureType;
   selected.value = null;
 
-  if (armedTool.value !== "PointOfInterest") {
+  if (
+    armedTool.value !== "PointOfInterest" &&
+    armedTool.value !== "CameraCone"
+  ) {
     discardMarker();
   }
 
@@ -252,7 +274,10 @@ function onLeftClick(click: ScreenSpaceEventHandler.PositionedEvent): void {
     return;
   }
 
-  if (armedTool.value === "PointOfInterest") {
+  if (
+    armedTool.value === "PointOfInterest" ||
+    armedTool.value === "CameraCone"
+  ) {
     placeMarker(view, position);
   }
 
@@ -267,16 +292,21 @@ function onLeftClick(click: ScreenSpaceEventHandler.PositionedEvent): void {
 
 function featureAt(view: Viewer, screenPosition: Cartesian2): Feature | null {
   const picked: unknown = view.scene.pick(screenPosition);
-  const id = (picked as { id?: { id?: unknown } } | undefined)?.id?.id;
+  const entityId = (picked as { id?: { id?: unknown } } | undefined)?.id?.id;
 
-  if (typeof id !== "string") {
+  if (typeof entityId !== "string") {
     return null;
   }
+
+  const id = entityId.startsWith(CAMERA_CONE_ID_PREFIX)
+    ? entityId.slice(CAMERA_CONE_ID_PREFIX.length)
+    : entityId;
 
   return (
     mappedPoints.value.find((feature) => feature.id === id) ??
     mappedTrails.value.find((feature) => feature.id === id) ??
     mappedAreas.value.find((feature) => feature.id === id) ??
+    mappedCameras.value.find((feature) => feature.id === id) ??
     null
   );
 }
@@ -380,6 +410,101 @@ function discardMarker(): void {
 
   marker = null;
   markerPosition.value = null;
+}
+
+function saveCamera(feature: CameraCone): void {
+  discardMarker();
+  mapCamera(feature);
+  emit("create", feature);
+  armedTool.value = null;
+}
+
+function mapCamera(feature: CameraCone): void {
+  const view = viewer;
+  if (view === null || feature.window !== null) return;
+
+  mappedCameras.value.push(feature);
+  const { longitude, latitude, elevationMetres } = feature.position;
+  const vertex = Cartesian3.fromDegrees(longitude, latitude, elevationMetres);
+  const direction = cameraDirection(vertex, feature.headingDegrees, feature.pitchDegrees);
+  const centre = Cartesian3.add(
+    vertex,
+    Cartesian3.multiplyByScalar(
+      direction,
+      feature.distanceFromVertexMetres / 2,
+      new Cartesian3(),
+    ),
+    new Cartesian3(),
+  );
+
+  const markerEntity = view.entities.add({
+    id: feature.id,
+    name: feature.name,
+    position: new ConstantPositionProperty(vertex),
+    point: CAMERA_MARKER,
+  });
+  mappedEntities.set(feature.id, markerEntity);
+
+  view.entities.add({
+    id: `${CAMERA_CONE_ID_PREFIX}${feature.id}`,
+    name: feature.name,
+    position: new ConstantPositionProperty(centre),
+    orientation: cameraOrientation(vertex, direction),
+    cylinder: {
+      length: feature.distanceFromVertexMetres,
+      topRadius: feature.baseRadiusMetres,
+      bottomRadius: 0,
+      material: CAMERA_FILL,
+      outline: true,
+      outlineColor: CAMERA_COLOR,
+      numberOfVerticalLines: 16,
+    },
+  });
+}
+
+function cameraDirection(
+  vertex: Cartesian3,
+  headingDegrees: number,
+  pitchDegrees: number,
+): Cartesian3 {
+  const heading = CesiumMath.toRadians(headingDegrees);
+  const pitch = CesiumMath.toRadians(pitchDegrees);
+  const horizontal = Math.cos(pitch);
+  const localDirection = new Cartesian3(
+    Math.sin(heading) * horizontal,
+    Math.cos(heading) * horizontal,
+    Math.sin(pitch),
+  );
+  const localToFixed = Transforms.eastNorthUpToFixedFrame(vertex);
+  return Cartesian3.normalize(
+    Matrix4.multiplyByPointAsVector(localToFixed, localDirection, new Cartesian3()),
+    new Cartesian3(),
+  );
+}
+
+function cameraOrientation(vertex: Cartesian3, direction: Cartesian3): Quaternion {
+  const up = Cartesian3.normalize(vertex, new Cartesian3());
+  let xAxis = Cartesian3.cross(up, direction, new Cartesian3());
+
+  if (Cartesian3.magnitudeSquared(xAxis) < CesiumMath.EPSILON12) {
+    xAxis = Cartesian3.cross(Cartesian3.UNIT_X, direction, xAxis);
+  }
+
+  Cartesian3.normalize(xAxis, xAxis);
+  const yAxis = Cartesian3.normalize(
+    Cartesian3.cross(direction, xAxis, new Cartesian3()),
+    new Cartesian3(),
+  );
+  const rotation = new Matrix3();
+  Matrix3.setColumn(rotation, 0, xAxis, rotation);
+  Matrix3.setColumn(rotation, 1, yAxis, rotation);
+  Matrix3.setColumn(rotation, 2, direction, rotation);
+  return Quaternion.fromRotationMatrix(rotation, new Quaternion());
+}
+
+function cancelCamera(): void {
+  discardMarker();
+  armedTool.value = null;
 }
 
 function extendTrail(view: Viewer, position: Cartesian3): void {
@@ -587,6 +712,18 @@ function discardTrail(): void {
     </div>
 
     <div
+      v-else-if="armedTool === 'CameraCone'"
+      class="metadata"
+      :class="{ docked: drawerOpen }"
+    >
+      <CameraConeForm
+        :position="markerPosition"
+        @saved="saveCamera"
+        @cancel="cancelCamera"
+      />
+    </div>
+
+    <div
       v-else-if="armedTool === 'TrailRoute'"
       class="metadata"
       :class="{ docked: drawerOpen }"
@@ -629,6 +766,11 @@ function discardTrail(): void {
       />
       <AreaOfInterestDetails
         v-else-if="selected.featureType === 'AreaOfInterest'"
+        :feature="selected"
+        @close="selected = null"
+      />
+      <CameraConeDetails
+        v-else-if="selected.featureType === 'CameraCone'"
         :feature="selected"
         @close="selected = null"
       />

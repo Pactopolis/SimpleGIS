@@ -15,12 +15,14 @@ export type { Page } from "./paging.ts";
 
 export {
   AREA_CATEGORIES,
+  CAMERA_TIERS,
   FEATURE_TYPES,
   POI_CATEGORIES,
   TRAIL_DIFFICULTIES,
 } from "./enums.ts";
 export type {
   AreaCategory,
+  CameraTier,
   FeatureType,
   PoiCategory,
   TrailDifficulty,
@@ -30,7 +32,11 @@ export { instant, isInstant } from "./features.ts";
 export type {
   AreaOfInterest,
   AreaOfInterestQuery,
+  CameraCone,
+  CameraConeQuery,
+  Feature,
   NewAreaOfInterest,
+  NewCameraCone,
   NewPointOfInterest,
   NewTrailRoute,
   PointOfInterest,

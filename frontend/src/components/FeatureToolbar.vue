@@ -80,6 +80,35 @@ defineEmits<{
         <circle cx="7.7" cy="19" r="2.1" fill="currentColor" />
       </svg>
     </button>
+
+    <button
+      type="button"
+      class="tool"
+      :class="{ armed: active === 'CameraCone' }"
+      :aria-pressed="active === 'CameraCone'"
+      title="Camera cone"
+      aria-label="Camera cone"
+      @click="$emit('select', 'CameraCone')"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M3 7.5h11.5v9H3z"
+          fill="currentColor"
+          fill-opacity="0.25"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linejoin="round"
+        />
+        <path
+          d="m14.5 10 6-3v10l-6-3z"
+          fill="currentColor"
+          stroke="currentColor"
+          stroke-width="1.2"
+          stroke-linejoin="round"
+        />
+        <circle cx="8.7" cy="12" r="2.25" fill="currentColor" />
+      </svg>
+    </button>
   </div>
 </template>
 

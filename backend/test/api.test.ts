@@ -9,7 +9,12 @@ import type { AddressInfo } from "node:net";
 import { createApp } from "../src/app.ts";
 import { FeatureStore } from "../src/store.ts";
 import type { Collection } from "../src/catalog.ts";
-import { AREAS_OF_INTEREST, POINTS_OF_INTEREST, TRAIL_ROUTES } from "../src/catalog.ts";
+import {
+  AREAS_OF_INTEREST,
+  CAMERA_CONES,
+  POINTS_OF_INTEREST,
+  TRAIL_ROUTES,
+} from "../src/catalog.ts";
 
 let baseUrl: string;
 const server = createApp(new FeatureStore());
@@ -127,6 +132,21 @@ const fixtures: Record<
       },
     },
   },
+  "camera-cones": {
+    collection: CAMERA_CONES,
+    write: {
+      name: "North Ridge Camera",
+      cameraTier: "Low",
+      geometry: { type: "Point", coordinates: [-106.4453, 39.6403, 3421.5] },
+    },
+    secondWrite: {
+      name: "North Ridge Camera",
+      cameraTier: "High",
+      headingDegrees: 18,
+      pitchDegrees: -7.5,
+      geometry: { type: "Point", coordinates: [-106.4453, 39.6403, 3421.5] },
+    },
+  },
 };
 
 for (const [path, fixture] of Object.entries(fixtures)) {
@@ -216,6 +236,54 @@ for (const [path, fixture] of Object.entries(fixtures)) {
     });
   });
 }
+
+describe("camera tier specifications", () => {
+  it("returns the canonical dimensions and default orientation", async () => {
+    const response = await call("/camera-cones", {
+      method: "POST",
+      json: {
+        name: "Tier Specification Test",
+        cameraTier: "Mid",
+        geometry: { type: "Point", coordinates: [-106.45, 39.64, 3200] },
+      },
+    });
+
+    assert.equal(response.status, 201);
+    assert.deepEqual(
+      response.body,
+      {
+        ...(response.body as object),
+        cameraTier: "Mid",
+        headingDegrees: 0,
+        pitchDegrees: 0,
+        typicalSpec: "4MP varifocal",
+        hfovDegrees: 60,
+        halfAngleDegrees: 30,
+        distanceFromVertexMetres: 200,
+        baseRadiusMetres: 115.5,
+      },
+    );
+
+    const id = (response.body as { id: string }).id;
+    await call(`/camera-cones/${id}`, { method: "DELETE" });
+  });
+
+  it("rejects out-of-range orientation angles", async () => {
+    const response = await call("/camera-cones", {
+      method: "POST",
+      json: {
+        name: "Bad Orientation",
+        cameraTier: "Low",
+        headingDegrees: 360,
+        pitchDegrees: 0,
+        geometry: { type: "Point", coordinates: [0, 0, 0] },
+      },
+    });
+
+    assert.equal(response.status, 400);
+    assert.equal((response.body as { code: string }).code, "malformed_body");
+  });
+});
 
 describe("routing", () => {
   it("returns 404 for an unknown collection", async () => {

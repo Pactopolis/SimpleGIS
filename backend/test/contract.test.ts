@@ -35,6 +35,13 @@ import {
   listTrailRoutes,
   replaceTrailRoute,
 } from "../../frontend/src/api/trailRoutes.ts";
+import {
+  createCameraCone,
+  deleteCameraCone,
+  getCameraCone,
+  listCameraCones,
+  replaceCameraCone,
+} from "../../frontend/src/api/cameraCones.ts";
 import { polygon } from "../../frontend/src/types/geometry.ts";
 
 import type { CallOptions } from "../../frontend/src/api/resources.ts";
@@ -259,5 +266,52 @@ describe("trail routes, through the frontend client", () => {
     await deleteTrailRoute(created.id, options);
 
     await assert.rejects(() => getTrailRoute(created.id, options), ApiError);
+  });
+});
+
+describe("camera cones, through the frontend client", () => {
+  it("round-trips the camera tier, orientation and canonical cone dimensions", async () => {
+    const position = at(-106.447, 39.641, 3410);
+    const created = await createCameraCone(
+      {
+        name: "Contract Test Camera",
+        description: "Tree-mounted camera.",
+        tier: "Low",
+        position,
+        headingDegrees: 24,
+        pitchDegrees: -6,
+      },
+      options,
+    );
+
+    assert.equal(created.featureType, "CameraCone");
+    assert.equal(created.tier, "Low");
+    assert.deepEqual(created.position, position);
+    assert.equal(created.headingDegrees, 24);
+    assert.equal(created.pitchDegrees, -6);
+    assert.equal(created.typicalSpec, "1080p fixed wide lens");
+    assert.equal(created.hfovDegrees, 90);
+    assert.equal(created.halfAngleDegrees, 45);
+    assert.equal(created.distanceFromVertexMetres, 50);
+    assert.equal(created.baseRadiusMetres, 50);
+
+    assert.deepEqual(await getCameraCone(created.id, options), created);
+
+    const filtered = await listCameraCones({ tier: "High" }, options);
+    assert.equal(filtered.items.some((camera) => camera.id === created.id), false);
+
+    const replaced = await replaceCameraCone(
+      created.id,
+      { name: "Contract Test Camera", tier: "High", position },
+      options,
+    );
+    assert.equal(replaced.tier, "High");
+    assert.equal(replaced.headingDegrees, 0);
+    assert.equal(replaced.pitchDegrees, 0);
+    assert.equal(replaced.distanceFromVertexMetres, 1000);
+    assert.equal(replaced.baseRadiusMetres, 131.7);
+
+    await deleteCameraCone(created.id, options);
+    await assert.rejects(() => getCameraCone(created.id, options), ApiError);
   });
 });

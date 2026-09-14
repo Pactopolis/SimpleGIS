@@ -2,7 +2,7 @@ openapi: 3.0.3
 
 info:
   title: Ridgeline Operational Picture API
-  version: 0.9.4
+  version: 0.10.0
   description: WIP
 
 servers:
@@ -18,6 +18,8 @@ tags:
     description: Closed polygonal features — restricted zones, search sectors, staging areas.
   - name: Trail Routes
     description: Open linear features — trails and routes between key points.
+  - name: Camera Cones
+    description: Point-anchored camera field-of-view cones for tree-mounted cameras.
 
 paths:
 
@@ -321,6 +323,106 @@ paths:
           description: Deleted.
         '404': { $ref: '#/components/responses/NotFound' }
 
+  # ---------------------------------------------------------------------------
+  # Camera Cones
+  # ---------------------------------------------------------------------------
+  /camera-cones:
+    get:
+      tags: [Camera Cones]
+      operationId: listCameraCones
+      summary: List camera cones
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/NameContains'
+        - $ref: '#/components/parameters/Bbox'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - name: cameraTier
+          in: query
+          required: false
+          description: Restrict results to a single camera tier.
+          schema:
+            $ref: '#/components/schemas/CameraTier'
+      responses:
+        '200':
+          description: A page of camera cones.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CameraConePage'
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+    post:
+      tags: [Camera Cones]
+      operationId: createCameraCone
+      summary: Create a camera cone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CameraConeWrite'
+      responses:
+        '201':
+          description: Created.
+          headers:
+            Location:
+              description: URI of the created resource.
+              schema: { type: string, format: uri }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CameraCone'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/NameConflict' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+
+  /camera-cones/{cameraConeId}:
+    parameters:
+      - $ref: '#/components/parameters/CameraConeId'
+    get:
+      tags: [Camera Cones]
+      operationId: getCameraCone
+      summary: Retrieve a camera cone
+      responses:
+        '200':
+          description: The camera cone.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CameraCone'
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Camera Cones]
+      operationId: replaceCameraCone
+      summary: Replace a camera cone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CameraConeReplace'
+      responses:
+        '200':
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CameraCone'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/NameConflict' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+    delete:
+      tags: [Camera Cones]
+      operationId: deleteCameraCone
+      summary: Delete a camera cone
+      responses:
+        '204':
+          description: Deleted.
+        '404': { $ref: '#/components/responses/NotFound' }
+
 components:
 
   parameters:
@@ -387,6 +489,11 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    CameraConeId:
+      name: cameraConeId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
 
   responses:
     BadRequest:
@@ -417,11 +524,12 @@ components:
     # -- Enumerations ---------------------------------------------------------
     FeatureType:
       type: string
-      description: Discriminator for the three feature collections.
+      description: Discriminator for the four feature collections.
       enum:
         - PointOfInterest
         - AreaOfInterest
         - TrailRoute
+        - CameraCone
 
     PoiCategory:
       type: string
@@ -451,6 +559,14 @@ components:
         - Moderate
         - Difficult
         - Expert
+
+    CameraTier:
+      type: string
+      description: Camera capability tier; each tier selects canonical cone dimensions.
+      enum:
+        - Low
+        - Mid
+        - High
 
     # -- Geometry -------------------------------------------------------------
     Position:
@@ -530,7 +646,7 @@ components:
 
     FeatureMetadataRead:
       type: object
-      description: Server-assigned metadata common to all three feature types.
+      description: Server-assigned metadata common to all four feature types.
       required: [id, featureType, name, createdAt]
       properties:
         id:
@@ -808,6 +924,124 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/TrailRoute'
+
+    # -- Camera Cone ---------------------------------------------------------
+    CameraConeWrite:
+      type: object
+      description: >-
+        Creation body for a tree-mounted camera field-of-view cone. The point
+        geometry is the cone vertex. Heading is clockwise from true north and
+        pitch is positive above the local horizon; omitted angles default to 0.
+      required: [name, cameraTier, geometry]
+      additionalProperties: false
+      properties:
+        name:
+          $ref: '#/components/schemas/FeatureName'
+        description:
+          $ref: '#/components/schemas/FeatureDescription'
+        cameraTier:
+          $ref: '#/components/schemas/CameraTier'
+        headingDegrees:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 360
+          exclusiveMaximum: true
+          default: 0
+        pitchDegrees:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          default: 0
+        geometry:
+          $ref: '#/components/schemas/PointGeometry'
+        startTime:
+          $ref: '#/components/schemas/FeatureStartTime'
+        endTime:
+          $ref: '#/components/schemas/FeatureEndTime'
+      example:
+        name: 'North Ridge Camera'
+        description: 'Tree-mounted camera facing the north basin.'
+        cameraTier: Mid
+        headingDegrees: 12
+        pitchDegrees: -8
+        geometry:
+          type: Point
+          coordinates: [-106.4453, 39.6403, 3421.5]
+
+    CameraConeReplace:
+      allOf:
+        - $ref: '#/components/schemas/CameraConeWrite'
+      description: >-
+        Total replacement body for a camera cone. Omitting startTime and
+        endTime clears its time window; omitted orientation angles default to 0.
+
+    CameraCone:
+      allOf:
+        - $ref: '#/components/schemas/FeatureMetadataRead'
+        - type: object
+          required:
+            - cameraTier
+            - headingDegrees
+            - pitchDegrees
+            - geometry
+            - typicalSpec
+            - hfovDegrees
+            - halfAngleDegrees
+            - distanceFromVertexMetres
+            - baseRadiusMetres
+          properties:
+            cameraTier:
+              $ref: '#/components/schemas/CameraTier'
+            headingDegrees:
+              type: number
+              format: double
+              minimum: 0
+              maximum: 360
+              exclusiveMaximum: true
+            pitchDegrees:
+              type: number
+              format: double
+              minimum: -90
+              maximum: 90
+            geometry:
+              $ref: '#/components/schemas/PointGeometry'
+            typicalSpec:
+              type: string
+              readOnly: true
+              example: '4MP varifocal'
+            hfovDegrees:
+              type: number
+              format: double
+              readOnly: true
+              example: 60
+            halfAngleDegrees:
+              type: number
+              format: double
+              readOnly: true
+              example: 30
+            distanceFromVertexMetres:
+              type: number
+              format: double
+              readOnly: true
+              example: 200
+            baseRadiusMetres:
+              type: number
+              format: double
+              readOnly: true
+              example: 115.5
+
+    CameraConePage:
+      allOf:
+        - $ref: '#/components/schemas/PageEnvelope'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/CameraCone'
 
     # -- Envelopes ------------------------------------------------------------
     PageEnvelope:
