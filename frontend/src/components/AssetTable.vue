@@ -45,7 +45,10 @@ function toRow(feature: Feature): TableRow {
 }
 
 function vertexCount(feature: Feature): number {
-  if (feature.featureType === "PointOfInterest") {
+  if (
+    feature.featureType === "PointOfInterest" ||
+    feature.featureType === "CameraCone"
+  ) {
     return 1;
   }
 
@@ -59,6 +62,10 @@ function vertexCount(feature: Feature): number {
 }
 
 function extentOf(feature: Feature): string {
+  if (feature.featureType === "CameraCone") {
+    return formatLength(feature.distanceFromVertexMetres);
+  }
+
   if (feature.featureType === "TrailRoute") {
     return feature.lengthMetres === null ? EMPTY : formatLength(feature.lengthMetres);
   }

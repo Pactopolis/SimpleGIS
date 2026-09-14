@@ -1,4 +1,9 @@
-import type { AreaCategory, PoiCategory, TrailDifficulty } from "./enums.ts";
+import type {
+  AreaCategory,
+  CameraTier,
+  PoiCategory,
+  TrailDifficulty,
+} from "./enums.ts";
 import type { BoundingBox, Coordinate, Path, Polygon } from "./geometry.ts";
 
 export interface TimeWindow {
@@ -87,4 +92,35 @@ export interface TrailRouteQuery extends FeatureQuery {
   difficulty?: TrailDifficulty;
 }
 
-export type Feature = PointOfInterest | AreaOfInterest | TrailRoute;
+export interface CameraCone extends FeatureMetadata {
+  featureType: "CameraCone";
+  tier: CameraTier;
+  position: Coordinate;
+  headingDegrees: number;
+  pitchDegrees: number;
+  typicalSpec: string;
+  hfovDegrees: number;
+  halfAngleDegrees: number;
+  distanceFromVertexMetres: number;
+  baseRadiusMetres: number;
+}
+
+export interface NewCameraCone {
+  name: string;
+  description?: string | null;
+  tier: CameraTier;
+  position: Coordinate;
+  headingDegrees?: number;
+  pitchDegrees?: number;
+  window?: TimeWindow | null;
+}
+
+export interface CameraConeQuery extends FeatureQuery {
+  tier?: CameraTier;
+}
+
+export type Feature =
+  | PointOfInterest
+  | AreaOfInterest
+  | TrailRoute
+  | CameraCone;

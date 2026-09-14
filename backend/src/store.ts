@@ -3,7 +3,11 @@
 import { randomUUID } from "node:crypto";
 
 import type { Collection } from "./catalog.ts";
-import { COLLECTIONS } from "./catalog.ts";
+import {
+  CAMERA_TIER_SPECS,
+  COLLECTIONS,
+  type CameraTier,
+} from "./catalog.ts";
 import { ApiError } from "./errors.ts";
 import * as geometry from "./geometry.ts";
 import { parseRfc3339, toRfc3339 } from "./validation.ts";
@@ -120,6 +124,17 @@ function build(collection: Collection, body: FeatureBody): FeatureRecord {
 
   if (collection.measurementField !== null) {
     feature[collection.measurementField] = geometry.measure(body.geometry);
+  }
+
+  if (collection.featureType === "CameraCone") {
+    const spec = CAMERA_TIER_SPECS[body.category as CameraTier];
+    feature.headingDegrees = body.headingDegrees ?? 0;
+    feature.pitchDegrees = body.pitchDegrees ?? 0;
+    feature.typicalSpec = spec.typicalSpec;
+    feature.hfovDegrees = spec.hfovDegrees;
+    feature.halfAngleDegrees = spec.halfAngleDegrees;
+    feature.distanceFromVertexMetres = spec.distanceFromVertexMetres;
+    feature.baseRadiusMetres = spec.baseRadiusMetres;
   }
 
   return feature;

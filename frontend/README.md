@@ -1,8 +1,8 @@
 # ridgeline-web
 
 Vue 3 + Cesium frontend for the Ridgeline Operational Picture. Renders
-points of interest, areas of interest, and trail routes on a 3D globe, with
-forms for creating and editing each feature type.
+points of interest, areas of interest, trail routes, and directional camera
+coverage cones on a 3D globe, with forms for creating each feature type.
 
 Requires Node 22.23.2 / npm 10.9.8 (pinned in `package.json#engines`; the
 repo-root devcontainer provisions this exactly). Talks to the API at `/v1`,

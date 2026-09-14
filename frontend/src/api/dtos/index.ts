@@ -60,3 +60,15 @@ export type {
   TrailRouteReadDto,
   TrailRouteWriteDto,
 } from "./trailRoute.ts";
+
+export {
+  toCameraCone,
+  toCameraConePage,
+  toCameraConeQuery,
+  toCameraConeWriteDto,
+} from "./cameraCone.ts";
+export type {
+  CameraConePageDto,
+  CameraConeReadDto,
+  CameraConeWriteDto,
+} from "./cameraCone.ts";

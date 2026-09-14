@@ -1,7 +1,8 @@
 # Ridgeline Operational Picture
 
 A Cesium-based 3D map viewer for tracking points of interest, areas of
-interest, and trail routes, backed by the Ridgeline Operational Picture API.
+interest, trail routes, and tree-mounted camera coverage cones, backed by the
+Ridgeline Operational Picture API.
 
 ## Getting started (devcontainer)
 

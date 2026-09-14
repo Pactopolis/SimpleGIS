@@ -35,3 +35,11 @@ export {
   listTrailRoutes,
   replaceTrailRoute,
 } from "./trailRoutes.ts";
+
+export {
+  createCameraCone,
+  deleteCameraCone,
+  getCameraCone,
+  listCameraCones,
+  replaceCameraCone,
+} from "./cameraCones.ts";

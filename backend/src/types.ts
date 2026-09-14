@@ -26,6 +26,8 @@ export interface FeatureBody {
   geometry: Geometry;
   startTime: Date | null;
   endTime: Date | null;
+  headingDegrees?: number;
+  pitchDegrees?: number;
 }
 
 export interface ListQuery {

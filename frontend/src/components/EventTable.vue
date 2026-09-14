@@ -9,6 +9,7 @@ import {
   aborted,
   describeFailure,
   eachPage,
+  listCameraCones,
   listAreasOfInterest,
   listPointsOfInterest,
   listTrailRoutes,
@@ -92,6 +93,7 @@ async function load(): Promise<void> {
       pageThrough((page, options) => listPointsOfInterest(query(page), options)),
       pageThrough((page, options) => listTrailRoutes(query(page), options)),
       pageThrough((page, options) => listAreasOfInterest(query(page), options)),
+      pageThrough((page, options) => listCameraCones(query(page), options)),
     ]);
 
     if (token === latest) {

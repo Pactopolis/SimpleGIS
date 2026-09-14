@@ -15,6 +15,7 @@ export const FEATURE_TYPE_LABELS: Record<FeatureType, string> = {
   PointOfInterest: "Point of interest",
   TrailRoute: "Trail route",
   AreaOfInterest: "Area of interest",
+  CameraCone: "Camera cone",
 };
 
 export function formatFeatureType(feature: Feature): string {
@@ -22,9 +23,9 @@ export function formatFeatureType(feature: Feature): string {
 }
 
 export function formatFeatureClass(feature: Feature): string {
-  return feature.featureType === "TrailRoute"
-    ? feature.difficulty
-    : feature.category;
+  if (feature.featureType === "TrailRoute") return feature.difficulty;
+  if (feature.featureType === "CameraCone") return feature.tier;
+  return feature.category;
 }
 
 export function formatDuration(window: TimeWindow): string {

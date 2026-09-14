@@ -1,9 +1,9 @@
 # Ridgeline database
 
-A disposable PostgreSQL 16 + PostGIS 3.4 instance matching
-[database-schema.pdf](database-schema.pdf) — the `feature_types` /
-`features` tables backing the collections in
-[../backend/openapi.yaml](../backend/openapi.yaml).
+A disposable PostgreSQL 16 + PostGIS 3.4 instance implementing the
+`feature_types`, `camera_tiers`, and `features` tables that back the
+collections in [../backend/openapi.yaml](../backend/openapi.yaml). The
+executable schema in [init/001-schema.sql](init/001-schema.sql) is authoritative.
 
 It is **ephemeral by design**: the container's data directory is mounted on
 `tmpfs`, so nothing survives a `docker compose down` (or even a restart of
@@ -68,8 +68,8 @@ From another container on the same Docker network, use the service name
 
 ## Schema changes
 
-Edit [init/001-schema.sql](init/001-schema.sql) (and regenerate
-`database-schema.pdf` if you keep it in sync). `docker-entrypoint-initdb.d`
+Edit [init/001-schema.sql](init/001-schema.sql) (and regenerate the optional
+`database-schema.pdf` diagram if you keep it in sync). `docker-entrypoint-initdb.d`
 scripts only run against a fresh data directory, but since this database
 never keeps data past a restart, `docker compose down && docker compose up
 -d` is all a schema change needs.
